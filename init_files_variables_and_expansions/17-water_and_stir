@@ -1,2 +1,2 @@
 #!/bin/bash
-echo $((WATER + STIR))
+echo $((5#$WATER + 4#$STIR))

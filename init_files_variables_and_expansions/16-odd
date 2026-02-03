@@ -1,2 +1,2 @@
 #!/bin/bash
-while read L1; do echo "$L1"; read L2; done
+paste - - < /dev/stdin | cut -f1

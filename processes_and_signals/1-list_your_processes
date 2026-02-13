@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# This script lists all running processes showing UID and full command line
+
+echo "UID"
+
+for pid in /proc/[0-9]*; do
+    if [ -r "$pid/status" ] && [ -r "$pid/cmdline" ]; then
+        uid=$(awk '/^Uid:/{print $2}' "$pid/status")
+        cmd=$(tr '\0' ' ' < "$pid/cmdline" | sed 's/ $//')
+        if [ -n "$cmd" ]; then
+            echo "$uid $cmd"
+        fi
+    fi
+done

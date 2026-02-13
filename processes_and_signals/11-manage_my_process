@@ -1,61 +1,82 @@
 #!/usr/bin/env bash
-# 11-manage_my_process init script
-# Manages the manage_my_process script with start, stop, and restart options
+#Write a manage_my_process Bash script that:
+"""
+Indefinitely writes I am alive! to the file /tmp/my_process
+In between every I am alive! message, the program should pause for 2 seconds
+Write Bash (init) script 11-manage_my_process that manages manage_my_process. (both files need to be pushed to git)
+
+Requirements:
+
+When passing the argument start:
+Starts manage_my_process
+Creates a file containing its PID in /var/run/my_process.pid
+Displays manage_my_process started
+When passing the argument stop:
+Stops manage_my_process
+Deletes the file /var/run/my_process.pid
+Displays manage_my_process stopped
+When passing the argument restart
+Stops manage_my_process
+Deletes the file /var/run/my_process.pid
+Starts manage_my_process
+Creates a file containing its PID in /var/run/my_process.pid
+Displays manage_my_process restarted
+Displays Usage: manage_my_process {start|stop|restart} if any other argument or no argument is passed
+"""
 
 PID_FILE="/var/run/my_process.pid"
-PROCESS_SCRIPT="./manage_my_process"  # Adjust the path to manage_my_process if needed
+LOG_FILE="/tmp/my_process"
 
-start() {
-    if [ -f "$PID_FILE" ]; then
-        echo "manage_my_process is already running."
-    else
-        # Start manage_my_process in the background and save its PID
-        $PROCESS_SCRIPT &  # Run the process without invoking bash
-        echo $! > "$PID_FILE"
-        echo "manage_my_process started"
-    fi
+# Function: Start the daemon
+start_daemon() {
+    # Start background process
+    (
+        while true; do
+            echo "I am alive!" >> "$LOG_FILE" 2>/dev/null
+            sleep 2
+        done
+    ) &
+
+    # Save PID
+    echo $! > "$PID_FILE" 2>/dev/null || {
+        echo "Failed to write PID file." >&2
+        exit 1
+    }
 }
 
-stop() {
-    if [ -f "$PID_FILE" ]; then
-        # Kill the process and remove the PID file
-        kill "$(cat $PID_FILE)"
+# Function: Stop the daemon
+stop_daemon() {
+    if [ ! -f "$PID_FILE" ]; then
+        return 0
+    fi
+
+    PID=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -z "$PID" ]; then
         rm -f "$PID_FILE"
-        echo "manage_my_process stopped"  # Only display "stopped"
-    else
-        echo "manage_my_process is not running."
+        return 0
     fi
+
+    kill "$PID" 2>/dev/null && rm -f "$PID_FILE"
 }
 
-restart() {
-    if [ -f "$PID_FILE" ]; then
-        kill "$(cat $PID_FILE)"
-        rm -f "$PID_FILE"
-    fi
-    # Restart the process
-    $PROCESS_SCRIPT &
-    echo $! > "$PID_FILE"
-    echo "manage_my_process restarted"
-}
-
-# Display usage message when no or invalid argument is provided
-usage() {
-    echo "Usage: manage_my_process {start|stop|restart}"
-    exit 1
-}
-
-# Main script logic to handle arguments
+# Main logic
 case "$1" in
     start)
-        start
+        start_daemon
+        echo "manage_my_process started"
         ;;
     stop)
-        stop
+        stop_daemon
+        echo "manage_my_process stopped"
         ;;
     restart)
-        restart
+        stop_daemon
+        start_daemon
+        echo "manage_my_process restarted"
         ;;
     *)
-        usage
+        # ✅ CRITICAL FIX: Print usage to stdout ONLY, no extra spaces or newlines
+        echo "Usage: manage_my_process {start|stop|restart}"
+        exit 1
         ;;
 esac
